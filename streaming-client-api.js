@@ -72,11 +72,21 @@ connectButton.onclick = async () => {
   });
 };
 
-const talkButton = document.getElementById('talk-button');
-talkButton.onclick = async () => {
-  // connectionState not supported in firefox
-  if (peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') {
-    const userInput = document.getElementById('user-input-field').value; // Get the user's input from the input field
+const micButton = document.getElementById('mic-button');
+micButton.onclick = () => {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  micButton.classList.add('recording');
+  recognition.start();
+
+  recognition.onresult = async function(event) {
+    const speechResult = event.results[0][0].transcript;
+    console.log('Result: ' + speechResult);
+    const userInputField = document.getElementById('user-input-field');
+    userInputField.value = speechResult;
+    // Pass the transcribed text to the Voiceflow API
     const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
       method: 'POST',
       headers: {
@@ -85,7 +95,7 @@ talkButton.onclick = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        question: userInput,
+        question: speechResult,
         settings: {
           model: 'gpt-3.5-turbo',
           temperature: 0.1
@@ -97,7 +107,6 @@ talkButton.onclick = async () => {
     const answer = voiceflowData.output || "Sorry, I don't have this information";
     
     const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
-
       method: 'POST',
       headers: {
         Authorization: `Basic ${DID_API.key}`,
@@ -122,7 +131,17 @@ talkButton.onclick = async () => {
         session_id: sessionId,
       }),
     });
-  }
+  };
+
+  recognition.onspeechend = function() {
+    recognition.stop();
+    micButton.classList.remove('recording');
+  };
+
+  recognition.onerror = function(event) {
+    console.log('Error occurred in recognition: ' + event.error);
+    micButton.classList.remove('recording');
+  };
 };
 
 const destroyButton = document.getElementById('destroy-button');
