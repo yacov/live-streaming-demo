@@ -24,6 +24,7 @@ const peerStatusLabel = document.getElementById('peer-status-label');
 const iceStatusLabel = document.getElementById('ice-status-label');
 const iceGatheringStatusLabel = document.getElementById('ice-gathering-status-label');
 const signalingStatusLabel = document.getElementById('signaling-status-label');
+const streamingStatusLabel = document.getElementById('streaming-status-label');
 
 const connectButton = document.getElementById('connect-button');
 connectButton.onclick = async () => {
@@ -41,7 +42,7 @@ connectButton.onclick = async () => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      source_url: 'https://create-images-results.d-id.com/google-oauth2%7C114038290851482870397/drm_30flpHeqGlQpbkgM3rAjR/image.png',
+      source_url: 'https://create-images-results.d-id.com/DefaultPresenters/Hassan_m/image.jpeg',
     }),
   });
 
@@ -84,12 +85,17 @@ talkButton.onclick = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        question: userInput
+        question: userInput,
+        settings: {
+          model: 'gpt-3.5-turbo',
+          temperature: 0.1
+        }
       })
     });
 
     const voiceflowData = await voiceflowResponse.json();
-    const answer = voiceflowData.output;
+    const answer = voiceflowData.output || "Sorry, I don't have this information";
+    
     const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
 
       method: 'POST',
@@ -107,7 +113,11 @@ talkButton.onclick = async () => {
         },
         driver_url: 'bank://lively/',
         config: {
-          stitch: true,
+          fluent: true,
+          pad_audio: 0.1,
+          align_driver: true,
+          auto_match: true,
+          normalization_factor: 1
         },
         session_id: sessionId,
       }),
@@ -180,7 +190,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
     setVideoElement(remoteStream);
   } else {
     status = 'empty';
-    //playIdleVideo();
+    playIdleVideo();
   }
   streamingStatusLabel.innerText = status;
   streamingStatusLabel.className = 'streamingState-' + status;
@@ -212,7 +222,7 @@ function onTrack(event) {
         lastBytesReceived = report.bytesReceived;
       }
     });
-  }, 600);
+  }, 500);
 }
 
 async function createPeerConnection(offer, iceServers) {
