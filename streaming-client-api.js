@@ -24,7 +24,6 @@ const peerStatusLabel = document.getElementById('peer-status-label');
 const iceStatusLabel = document.getElementById('ice-status-label');
 const iceGatheringStatusLabel = document.getElementById('ice-gathering-status-label');
 const signalingStatusLabel = document.getElementById('signaling-status-label');
-const streamingStatusLabel = document.getElementById('streaming-status-label');
 
 const connectButton = document.getElementById('connect-button');
 connectButton.onclick = async () => {
@@ -42,7 +41,7 @@ connectButton.onclick = async () => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      source_url: 'https://d-id-public-bucket.s3.amazonaws.com/or-roman.jpg',
+      source_url: 'https://create-images-results.d-id.com/google-oauth2%7C114038290851482870397/drm_30flpHeqGlQpbkgM3rAjR/image.png',
     }),
   });
 
@@ -76,7 +75,23 @@ const talkButton = document.getElementById('talk-button');
 talkButton.onclick = async () => {
   // connectionState not supported in firefox
   if (peerConnection?.signalingState === 'stable' || peerConnection?.iceConnectionState === 'connected') {
+    const userInput = document.getElementById('user-input-field').value; // Get the user's input from the input field
+    const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
+      method: 'POST',
+      headers: {
+        'Authorization': `${DID_API.vs_key}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        question: userInput
+      })
+    });
+
+    const voiceflowData = await voiceflowResponse.json();
+    const answer = voiceflowData.output;
     const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
+
       method: 'POST',
       headers: {
         Authorization: `Basic ${DID_API.key}`,
@@ -84,8 +99,11 @@ talkButton.onclick = async () => {
       },
       body: JSON.stringify({
         script: {
-          type: 'audio',
-          audio_url: 'https://d-id-public-bucket.s3.us-west-2.amazonaws.com/webrtc.mp3',
+          type: 'text',
+          subtitles: 'false',
+          provider: { type: 'microsoft', voice_id: 'en-US-ChristopherNeural' },
+          ssml: true,
+          input: answer // Use the user input,
         },
         driver_url: 'bank://lively/',
         config: {
@@ -162,7 +180,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
     setVideoElement(remoteStream);
   } else {
     status = 'empty';
-    playIdleVideo();
+    //playIdleVideo();
   }
   streamingStatusLabel.innerText = status;
   streamingStatusLabel.className = 'streamingState-' + status;
@@ -174,7 +192,7 @@ function onTrack(event) {
    * that's being streamed - It does so by periodically looking for changes in total stream data size
    *
    * This information in our case is used in order to show idle video while no talk is streaming.
-   * To create this idle video use the POST https://api.d-id.com/talks endpoint with a silent audio file or a text script with only ssml breaks 
+   * To create this idle video use the POST https://api.d-id.com/talks endpoint with a silent audio file or a text script with only ssml breaks
    * https://docs.aws.amazon.com/polly/latest/dg/supportedtags.html#break-tag
    * for seamless results use `config.fluent: true` and provide the same configuration as the streaming video
    */
@@ -194,7 +212,7 @@ function onTrack(event) {
         lastBytesReceived = report.bytesReceived;
       }
     });
-  }, 500);
+  }, 600);
 }
 
 async function createPeerConnection(offer, iceServers) {
