@@ -80,11 +80,11 @@ micButton.onclick = () => {
   recognition.maxAlternatives = 1;
   micButton.classList.add('recording');
   recognition.start();
-
+  const userInputField = document.getElementById('user-input-field');
   recognition.onresult = async function(event) {
     const speechResult = event.results[0][0].transcript;
     console.log('Result: ' + speechResult);
-    const userInputField = document.getElementById('user-input-field');
+
     userInputField.value = speechResult;
     // Pass the transcribed text to the Voiceflow API
     const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
@@ -105,7 +105,7 @@ micButton.onclick = () => {
 
     const voiceflowData = await voiceflowResponse.json();
     const answer = voiceflowData.output || "Sorry, I don't have this information";
-    
+
     const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
       method: 'POST',
       headers: {
@@ -136,6 +136,7 @@ micButton.onclick = () => {
   recognition.onspeechend = function() {
     recognition.stop();
     micButton.classList.remove('recording');
+    userInputField.value = "";
   };
 
   recognition.onerror = function(event) {
