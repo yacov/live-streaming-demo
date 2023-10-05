@@ -42,7 +42,7 @@ connectButton.onclick = async () => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      source_url: 'https://create-images-results.d-id.com/DefaultPresenters/Hassan_m/image.jpeg',
+      source_url: 'https://create-images-results.d-id.com/google-oauth2%7C112587076384125082124/upl_52sktpAEuUJZED85Zu-2y/image.png',
     }),
   });
 
@@ -209,7 +209,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
     setVideoElement(remoteStream);
   } else {
     status = 'empty';
-    playIdleVideo();
+    //playIdleVideo();
   }
   streamingStatusLabel.innerText = status;
   streamingStatusLabel.className = 'streamingState-' + status;
