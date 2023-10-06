@@ -124,14 +124,18 @@
       }
 
       #video-wrapper {
-        height: 400px;
+        height: auto;
         background-position: top;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
 
       #video-wrapper div {
-        width: 400px;
-          margin: 0 auto 30px;
-          padding: 50px 0 0 0;
+        width: auto;
+        height: auto;
+        margin: 0 auto 30px;
+        padding: 50px 0 0 0;
       }
       video {
         display: block;
@@ -154,12 +158,12 @@
       <!-- added "id=video-wrapper" -->
       <div id="video-wrapper">
         <div>
-          <video id="talk-video" width="400" height="400" autoplay></video>
+          <video id="talk-video" width=auto height=auto autoplay></video>
         </div>
       </div>
       <br />
       <div id='input-container'>
-        <input type='text' id='user-input-field' placeholder='Enter your message...'>
+        <input type='text' id='user-input-field' placeholder=' Your message...'>
         <hr> <!-- Add a horizontal rule -->
       </div>
       <!-- added div#buttons -->

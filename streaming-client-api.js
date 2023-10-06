@@ -42,8 +42,8 @@ connectButton.onclick = async () => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      source_url: 'https://create-images-results.d-id.com/google-oauth2%7C112587076384125082124/upl_52sktpAEuUJZED85Zu-2y/image.png',
-    }),
+      source_url: 'https://create-images-results.d-id.com/google-oauth2%7C112587076384125082124/upl__dCudPyOYvZqWQLw0zV2_/image.png',
+  })
   });
 
   const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json();
@@ -120,13 +120,14 @@ micButton.onclick = () => {
           ssml: true,
           input: answer // Use the user input,
         },
-        driver_url: 'bank://lively/',
         config: {
           fluent: true,
-          pad_audio: 0.1,
+          pad_audio: '0.0',
           align_driver: true,
           auto_match: true,
-          normalization_factor: 1
+          normalization_factor: 0.5,
+          sharpen: true,
+          result_format: 'mp4'
         },
         session_id: sessionId,
       }),
@@ -210,7 +211,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
     setVideoElement(remoteStream);
   } else {
     status = 'empty';
-    //playIdleVideo();
+  // playIdleVideo();
   }
   streamingStatusLabel.innerText = status;
   streamingStatusLabel.className = 'streamingState-' + status;
@@ -284,7 +285,7 @@ function setVideoElement(stream) {
 
 function playIdleVideo() {
   talkVideo.srcObject = undefined;
-  talkVideo.src = 'or_idle.mp4';
+  talkVideo.src = 'man_idle.mp4';
   talkVideo.loop = true;
 }
 
