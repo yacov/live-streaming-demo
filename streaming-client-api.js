@@ -1,6 +1,6 @@
 'use strict';
 import DID_API from './api.json' assert { type: 'json' };
-
+let selectedConfig;
 if (DID_API.key == '🤫') alert('Please put your api key inside ./api.json and restart..');
 
 const RTCPeerConnection = (
@@ -17,6 +17,38 @@ let sessionClientAnswer;
 let statsIntervalId;
 let videoIsPlaying;
 let lastBytesReceived;
+const config = {
+  avatar: {
+    man: {
+      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_tiTmukGsgloXzi30TOyGj/uae_presenterSmall.png',
+      idleVideo: 'M_Idle.mp4'
+    },
+    woman: {
+      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_WmsMKDEB8NeMRH3DilBnX/PresenterWomanFinal1.png',
+      idleVideo: 'W_idle.mp4'
+    }
+  },
+  language: {
+    'en-US': {
+      recognitionLang: 'en-US',
+      authorizationKey: DID_API.vs_en_key,
+      noInformationMessage: 'Sorry, I don\'t have this information',
+      voice_id: {
+        man: 'en-US-ChristopherNeural',
+        woman: 'en-US-JennyNeural'
+      }
+    },
+    'ar': {
+      recognitionLang: 'ar',
+      authorizationKey: DID_API.vs_ar_key,
+      noInformationMessage: 'آسف، ليس لدي هذه المعلومات',
+      voice_id: {
+        man: 'ar-AE-HamdanNeural',
+        woman: 'ar-AE-FatimaNeural'
+      }
+    }
+  }
+};
 
 const talkVideo = document.getElementById('talk-video');
 talkVideo.setAttribute('playsinline', '');
@@ -28,6 +60,14 @@ const streamingStatusLabel = document.getElementById('streaming-status-label');
 
 const connectButton = document.getElementById('connect-button');
 connectButton.onclick = async () => {
+  const languageSelection = document.querySelector('input[name="language"]:checked').value;
+  const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
+
+  selectedConfig = {
+    ...config.avatar[avatarSelection],
+    ...config.language[languageSelection],
+    voice_id: config.language[languageSelection].voice_id[avatarSelection]
+  };
   if (peerConnection && peerConnection.connectionState === 'connected') {
     return;
   }
@@ -42,7 +82,7 @@ connectButton.onclick = async () => {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_tiTmukGsgloXzi30TOyGj/uae_presenterSmall.png',
+      source_url: selectedConfig.source_url,
       config: { stitch: true }
     })
   });
@@ -73,10 +113,26 @@ connectButton.onclick = async () => {
   });
 };
 
+const languageSelection = document.querySelector('input[name="language"]:checked').value;
+const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
+
+ selectedConfig = {
+  ...config.avatar[avatarSelection],
+  ...config.language[languageSelection],
+  voice_id: config.language[languageSelection].voice_id[avatarSelection]
+};
+
 const micButton = document.getElementById('mic-button');
 micButton.onclick = () => {
+  const languageSelection = document.querySelector('input[name="language"]:checked').value;
+  const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
+  selectedConfig = {
+    ...config.avatar[avatarSelection],
+    ...config.language[languageSelection],
+    voice_id: config.language[languageSelection].voice_id[avatarSelection]
+  };
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
-  recognition.lang = 'en-US';
+  recognition.lang = selectedConfig.recognitionLang;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
   micButton.classList.add('recording');
@@ -91,7 +147,7 @@ micButton.onclick = () => {
     const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
       method: 'POST',
       headers: {
-        'Authorization': `${DID_API.vs_en_key}`,
+        'Authorization': `${selectedConfig.authorizationKey}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
@@ -105,7 +161,7 @@ micButton.onclick = () => {
     });
 
     const voiceflowData = await voiceflowResponse.json();
-    const answer = voiceflowData.output || 'Sorry, I don\'t have this information';
+    const answer = voiceflowData.output || selectedConfig.noInformationMessage;
 
     const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
       method: 'POST',
@@ -117,7 +173,7 @@ micButton.onclick = () => {
         script: {
           type: 'text',
           subtitles: 'false',
-          provider: { type: 'microsoft', voice_id: 'en-US-ChristopherNeural' },
+          provider: { type: 'microsoft', voice_id: selectedConfig.voice_id },
           ssml: true,
           input: answer // Use the user input,
         },
@@ -215,7 +271,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
     setVideoElement(remoteStream);
   } else {
     status = 'empty';
-    //playIdleVideo();
+    playIdleVideo();
   }
   streamingStatusLabel.innerText = status;
   streamingStatusLabel.className = 'streamingState-' + status;
@@ -291,7 +347,7 @@ function setVideoElement(stream) {
 
 function playIdleVideo() {
   talkVideo.srcObject = undefined;
-  talkVideo.src = 'or_idle.mp4';
+  talkVideo.src = selectedConfig.idleVideo;
   talkVideo.loop = true;
 }
 
