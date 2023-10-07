@@ -39,11 +39,12 @@ connectButton.onclick = async () => {
     method: 'POST',
     headers: {
       Authorization: `Basic ${DID_API.key}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      source_url: 'https://create-images-results.d-id.com/google-oauth2%7C112587076384125082124/upl__dCudPyOYvZqWQLw0zV2_/image.png',
-  })
+      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_tiTmukGsgloXzi30TOyGj/uae_presenterSmall.png',
+      config: { stitch: true }
+    })
   });
 
   const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json();
@@ -63,12 +64,12 @@ connectButton.onclick = async () => {
     method: 'POST',
     headers: {
       Authorization: `Basic ${DID_API.key}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       answer: sessionClientAnswer,
-      session_id: sessionId,
-    }),
+      session_id: sessionId
+    })
   });
 };
 
@@ -80,17 +81,17 @@ micButton.onclick = () => {
   recognition.maxAlternatives = 1;
   micButton.classList.add('recording');
   recognition.start();
-  const userInputField = document.getElementById('user-input-field');
+
   recognition.onresult = async function(event) {
     const speechResult = event.results[0][0].transcript;
     console.log('Result: ' + speechResult);
-
+    const userInputField = document.getElementById('user-input-field');
     userInputField.value = speechResult;
     // Pass the transcribed text to the Voiceflow API
     const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
       method: 'POST',
       headers: {
-        'Authorization': `${DID_API.vs_key}`,
+        'Authorization': `${DID_API.vs_en_key}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
@@ -104,13 +105,13 @@ micButton.onclick = () => {
     });
 
     const voiceflowData = await voiceflowResponse.json();
-    const answer = voiceflowData.output || "Sorry, I don't have this information";
+    const answer = voiceflowData.output || 'Sorry, I don\'t have this information';
 
     const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${DID_API.key}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         script: {
@@ -120,24 +121,23 @@ micButton.onclick = () => {
           ssml: true,
           input: answer // Use the user input,
         },
+        driver_url: 'bank://lively/',
         config: {
-          fluent: true,
-          pad_audio: '0.0',
-          align_driver: true,
-          auto_match: true,
-          normalization_factor: 0.5,
-          sharpen: true,
-          result_format: 'mp4'
+          fluent: false,
+          pad_audio: 0.2,
+          align_driver: false,
+          auto_match: false,
+          normalization_factor: 1,
+          sharpen:true,
         },
-        session_id: sessionId,
-      }),
+        session_id: sessionId
+      })
     });
   };
 
   recognition.onspeechend = function() {
     recognition.stop();
     micButton.classList.remove('recording');
-    userInputField.value = "";
   };
 
   recognition.onerror = function(event) {
@@ -152,9 +152,9 @@ destroyButton.onclick = async () => {
     method: 'DELETE',
     headers: {
       Authorization: `Basic ${DID_API.key}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ session_id: sessionId }),
+    body: JSON.stringify({ session_id: sessionId })
   });
 
   stopAllStreams();
@@ -165,6 +165,7 @@ function onIceGatheringStateChange() {
   iceGatheringStatusLabel.innerText = peerConnection.iceGatheringState;
   iceGatheringStatusLabel.className = 'iceGatheringState-' + peerConnection.iceGatheringState;
 }
+
 function onIceCandidate(event) {
   console.log('onIceCandidate', event);
   if (event.candidate) {
@@ -174,17 +175,18 @@ function onIceCandidate(event) {
       method: 'POST',
       headers: {
         Authorization: `Basic ${DID_API.key}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         candidate,
         sdpMid,
         sdpMLineIndex,
-        session_id: sessionId,
-      }),
+        session_id: sessionId
+      })
     });
   }
 }
+
 function onIceConnectionStateChange() {
   iceStatusLabel.innerText = peerConnection.iceConnectionState;
   iceStatusLabel.className = 'iceConnectionState-' + peerConnection.iceConnectionState;
@@ -193,11 +195,13 @@ function onIceConnectionStateChange() {
     closePC();
   }
 }
+
 function onConnectionStateChange() {
   // not supported in firefox
   peerStatusLabel.innerText = peerConnection.connectionState;
   peerStatusLabel.className = 'peerConnectionState-' + peerConnection.connectionState;
 }
+
 function onSignalingStateChange() {
   signalingStatusLabel.innerText = peerConnection.signalingState;
   signalingStatusLabel.className = 'signalingState-' + peerConnection.signalingState;
@@ -211,7 +215,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
     setVideoElement(remoteStream);
   } else {
     status = 'empty';
-  // playIdleVideo();
+    //playIdleVideo();
   }
   streamingStatusLabel.innerText = status;
   streamingStatusLabel.className = 'streamingState-' + status;
@@ -278,14 +282,16 @@ function setVideoElement(stream) {
   if (talkVideo.paused) {
     talkVideo
       .play()
-      .then((_) => {})
-      .catch((e) => {});
+      .then((_) => {
+      })
+      .catch((e) => {
+      });
   }
 }
 
 function playIdleVideo() {
   talkVideo.srcObject = undefined;
-  talkVideo.src = 'man_idle.mp4';
+  talkVideo.src = 'or_idle.mp4';
   talkVideo.loop = true;
 }
 

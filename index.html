@@ -1,191 +1,242 @@
 <!DOCTYPE html>
-<html lang='En'>
-  <head>
-    <title>D-ID Streaming POC</title>
-    <!-- added google fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
-      rel="stylesheet"
-    />
+<html>
+<head>
+  <title>D-ID Streaming POC</title>
+  <!-- added google fonts -->
+  <link href='https://fonts.googleapis.com' rel='preconnect' />
+  <link crossorigin href='https://fonts.gstatic.com' rel='preconnect' />
+  <link
+    href='https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap'
+    rel='stylesheet'
+  />
 
-    <style>
+  <style>
       .peerConnectionState-new {
-        color: cornflowerblue;
+          color: cornflowerblue;
       }
+
       .peerConnectionState-connecting {
-        color: orange;
+          color: orange;
       }
+
       .peerConnectionState-connected {
-        color: green;
+          color: green;
       }
+
       .peerConnectionState-disconnected,
       .peerConnectionState-closed,
       .peerConnectionState-failed {
-        color: red;
+          color: red;
       }
 
       .iceConnectionState-new {
-        color: cornflowerblue;
+          color: cornflowerblue;
       }
+
       .iceConnectionState-checking {
-        color: orange;
+          color: orange;
       }
+
       .iceConnectionState-connected,
       .iceConnectionState-completed {
-        color: green;
+          color: green;
       }
+
       .peerConnectionState-disconnected,
       .peerConnectionState-closed,
       .peerConnectionState-failed {
-        color: red;
+          color: red;
       }
 
       .iceGatheringState-new {
-        color: cornflowerblue;
+          color: cornflowerblue;
       }
+
       .iceGatheringState-gathering {
-        color: orange;
+          color: orange;
       }
+
       .iceGatheringState-complete {
-        color: black;
+          color: black;
       }
 
       .signalingState-stable {
-        color: green;
+          color: green;
       }
+
       .signalingState-have-local-offer,
       .signalingState-have-remote-offer,
       .signalingState-have-local-pranswer,
       .signalingState-have-remote-pranswer {
-        color: cornflowerblue;
+          color: cornflowerblue;
       }
+
       .signalingState-closed {
-        color: red;
+          color: red;
       }
 
       .streamingState-streaming {
-        color: green;
+          color: green;
       }
 
       .streamingState-empty {
-        color: grey;
+          color: grey;
       }
 
       /* added css from here */
 
       body * {
-        font-family: 'Mulish', sans-serif;
-        text-align: center;
+          font-family: 'Mulish', sans-serif;
+          text-align: center;
+          height: 100%;
+          margin: 0;
       }
 
       #content {
-        width: 820px;
-        position: relative;
-        margin: 0 auto;
+          width: 820px;
+          position: relative;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
       }
 
       #buttons {
-        clear: both;
-        padding: 0 0 0 0;
-        text-align: center;
+          clear: both;
+          padding: 0 0 0 0;
+          text-align: center;
       }
 
       button {
-        padding: 10px 20px;
-        border-radius: 5px;
-        border: none;
-        font-size: 16px;
-        margin: 0 5px;
-        background-color: #7459fe;
-        color: #fff;
+          padding: 10px 20px;
+          border-radius: 5px;
+          border: none;
+          font-size: 16px;
+          margin: 0 5px;
+          background-color: #7459fe;
+          color: #fff;
       }
 
       button:hover {
-        background-color: #9480ff;
-        cursor: pointer;
-        transition: all 0.2s ease-out;
+          background-color: #9480ff;
+          cursor: pointer;
+          transition: all 0.2s ease-out;
       }
 
+      #logo {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          width: 50px; /* Adjust as necessary */
+          height: 50px; /* Adjust as necessary */
+      }
 
       #status {
-        clear: both;
-        padding: 20px 0 0 0;
-        text-align: left;
-        display: inline-block;
-        zoom: 1;
-        line-height: 140%;
-        font-size: 15px;
+          clear: both;
+          padding: 20px 0 0 0;
+          text-align: left;
+          display: inline-block;
+          zoom: 1;
+          line-height: 140%;
+          font-size: 15px;
+          display: flex;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          width: 100%;
+          padding: 10px 0;
+          margin-top: auto;
+      }
+
+      .status-item {
+          margin: 0 10px;
       }
 
       #status div {
-        padding-bottom: 10px;
+          padding-bottom: 10px;
       }
 
       #video-wrapper {
-        height: auto;
-        background-position: top;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+          height: 542px; /* Match the video height */
+          width: 800px; /* Match the video width */
+          display: flex;
+          justify-content: center;
+          align-items: center;
       }
 
       #video-wrapper div {
-        width: auto;
-        height: auto;
-        margin: 0 auto 30px;
-        padding: 50px 0 0 0;
+          width: 800px; /* Match the video width */
+          height: 542px; /* Match the video height */
+          margin: 0 auto;
+          overflow: hidden;
+          border-radius: 20%; /* Optional */
       }
+
       video {
-        display: block;
-        background-color: #fff;
-        object-fit: contain;
+          max-width: 100%;
+          height: auto;
+          border-radius: 20%;
       }
+
       #user-input-field {
-    width: 80%; /* Adjust this value to make the input field as wide as you want */
-    font-size: 20px; /* Adjust this value to change the size of the input text */
-    margin: 0 auto; /* This centers the input field */
-    margin-top: 20px; /* This puts some space between the input field and the horizontal rule */
-    display: block; /* This makes the input field a block element, which is necessary for centering */
-  }
-    </style>
-  </head>
+          width: 80%; /* Adjust this value to make the input field as wide as you want */
+          font-size: 20px; /* Adjust this value to change the size of the input text */
+          margin: 0 auto; /* This centers the input field */
+          margin-top: 20px; /* This puts some space between the input field and the horizontal rule */
+          display: block; /* This makes the input field a block element, which is necessary for centering */
+      }
+  </style>
+</head>
 
-  <body>
-    <!-- adde "id=content" -->
-    <div id="content">
-      <!-- added "id=video-wrapper" -->
-      <div id="video-wrapper">
-        <div>
-          <video id="talk-video" width=auto height=auto autoplay></video>
-        </div>
-      </div>
-      <br />
-      <div id='input-container'>
-        <input type='text' id='user-input-field' placeholder=' Your message...'>
-        <hr> <!-- Add a horizontal rule -->
-      </div>
-      <!-- added div#buttons -->
-      <div id="buttons">
-        <button id="connect-button" type="button">Connect</button>
-        <button id="talk-button" type="button">Start</button>
-        <button id="mic-button" type="button">Mic</button>
-        <button id="destroy-button" type="button">Destroy</button>
-      </div>
+<body>
+<!-- adde "id=content" -->
+<div id='content'>
+  <img alt='Logo' id='logo' src='logo.jpg'>
+  <!-- added "id=video-wrapper" -->
+  <div id='video-wrapper'>
+    <div>
+      <video autoplay height='542' id='talk-video' width='800'></video>
+    </div>
+  </div>
+  <br />
+  <div id='input-container'>
+    <input id='user-input-field' placeholder='Enter your message...' type='text'>
+    <hr> <!-- Add a horizontal rule -->
+  </div>
+  <!-- added div#buttons -->
+  <div id='buttons'>
+    <button id='connect-button' type='button'>Connect bot</button>
+    <!--        <button id="talk-button" type="button">Start</button>-->
+    <button id='mic-button' type='button'>Mic</button>
+    <button id='destroy-button' type='button'>Stop bot</button>
+  </div>
 
-      <!-- added div#status -->
-      <div id="status">
-        <!-- removed the wrapping <div> tags -->
-        ICE gathering status: <label id="ice-gathering-status-label"></label
-        ><br />
-        ICE status: <label id="ice-status-label"></label><br />
-        Peer connection status: <label id="peer-status-label"></label><br />
-        Signaling status: <label id="signaling-status-label"></label><br />
-        Streaming status: <label id="streaming-status-label"></label><br />
-      </div>
+  <!-- added div#status -->
+  <div id='status' style='display: flex; justify-content: space-between; flex-wrap: wrap;'>
+
+    <div class='status-item'>
+      ICE gathering status: <label id='ice-gathering-status-label'></label>
     </div>
 
-    <script type="module" src="./index.js"></script>
-  </body>
+    <div class='status-item'>
+      ICE status: <label id='ice-status-label'></label>
+    </div>
+
+    <div class='status-item'>
+      Peer connection status: <label id='peer-status-label'></label>
+    </div>
+
+    <div class='status-item'>
+      Signaling status: <label id='signaling-status-label'></label>
+    </div>
+
+    <div class='status-item'>
+      Streaming status: <label id='streaming-status-label'></label>
+    </div>
+
+  </div>
+
+</div>
+
+<script src='./index.js' type='module'></script>
+</body>
 </html>
