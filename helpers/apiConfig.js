@@ -1,4 +1,4 @@
-import DID_API from './api.json' assert { type: 'json' };
+import DID_API from '../api.json' assert { type: 'json' };
 
 const config = {
     avatar: {

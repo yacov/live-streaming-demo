@@ -1,13 +1,29 @@
 'use strict';
-import { DID_API, config } from './helpers/apiConfig';
-import { talkVideo, /* ... other DOM elements ... */ } from './helpers/domElements';
-import VoiceflowAPI from './helpers/voiceflowAPI';
-import DIDAPI from './helpers/didAPI';
-import SpeechRecognition from './helpers/speechRecognition';
-import UIInteraction from './helpers/uiInteraction';
-import VideoPlayer from './helpers/videoPlayer';
-import RetryHelper from './helpers/retryHelper';
+import { DID_API, config } from './helpers/apiConfig.js';
+import { 
+  talkVideo, 
+  peerStatusLabel, 
+  iceStatusLabel, 
+  iceGatheringStatusLabel, 
+  signalingStatusLabel, 
+  streamingStatusLabel, 
+  connectButton, 
+  destroyButton, 
+  micButton, 
+  userInputField 
+} from './helpers/domElements.js';
+import VoiceflowAPI from './helpers/voiceflowAPI.js';
+import DIDAPI from './helpers/didAPI.js';
+import SpeechRecognition from './helpers/speechRecognition.js';
+import UIInteraction from './helpers/uiInteraction.js';
+import VideoPlayer from './helpers/videoPlayer.js';
+import RetryHelper from './helpers/retryHelper.js';
+
 let selectedConfig;
+const retryHelper = new RetryHelper();
+
+
+
 if (DID_API.key == '🤫') alert('Please put your api key inside ./api.json and restart..');
 
 const RTCPeerConnection = (
@@ -17,55 +33,17 @@ const RTCPeerConnection = (
 ).bind(window);
 
 let peerConnection;
-let streamId;
-let sessionId;
+let streamId = null; // Initialize streamId
+let sessionId = null;
 let sessionClientAnswer;
 
 let statsIntervalId;
 let videoIsPlaying;
 let lastBytesReceived;
-const config = {
-  avatar: {
-    man: {
-      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_tiTmukGsgloXzi30TOyGj/uae_presenterSmall.png',
-      idleVideo: 'M_Idle.mp4'
-    },
-    woman: {
-      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_WmsMKDEB8NeMRH3DilBnX/PresenterWomanFinal1.png',
-      idleVideo: 'W_idle.mp4'
-    }
-  },
-  language: {
-    'en-US': {
-      recognitionLang: 'en-US',
-      authorizationKey: DID_API.vs_en_key,
-      noInformationMessage: 'Sorry, I don\'t have this information',
-      voice_id: {
-        man: 'en-US-ChristopherNeural',
-        woman: 'en-US-JennyNeural'
-      }
-    },
-    'ar': {
-      recognitionLang: 'ar',
-      authorizationKey: DID_API.vs_ar_key,
-      noInformationMessage: 'آسف، ليس لدي هذه المعلومات',
-      voice_id: {
-        man: 'ar-AE-HamdanNeural',
-        woman: 'ar-AE-FatimaNeural'
-      }
-    }
-  }
-};
+const didAPI = new DIDAPI(DID_API.key, streamId, sessionId);
 
-const talkVideo = document.getElementById('talk-video');
 talkVideo.setAttribute('playsinline', '');
-const peerStatusLabel = document.getElementById('peer-status-label');
-const iceStatusLabel = document.getElementById('ice-status-label');
-const iceGatheringStatusLabel = document.getElementById('ice-gathering-status-label');
-const signalingStatusLabel = document.getElementById('signaling-status-label');
-const streamingStatusLabel = document.getElementById('streaming-status-label');
 
-const connectButton = document.getElementById('connect-button');
 connectButton.onclick = async () => {
   const languageSelection = document.querySelector('input[name="language"]:checked').value;
   const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
@@ -75,6 +53,7 @@ connectButton.onclick = async () => {
     ...config.language[languageSelection],
     voice_id: config.language[languageSelection].voice_id[avatarSelection]
   };
+
   if (peerConnection && peerConnection.connectionState === 'connected') {
     return;
   }
@@ -82,7 +61,7 @@ connectButton.onclick = async () => {
   stopAllStreams();
   closePC();
 
-  const sessionResponse = await fetchWithRetries(`${DID_API.url}/talks/streams`, {
+  const sessionResponse = await retryHelper.fetchWithRetries(`${DID_API.url}/talks/streams`, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${DID_API.key}`,
@@ -97,6 +76,8 @@ connectButton.onclick = async () => {
   const { id: newStreamId, offer, ice_servers: iceServers, session_id: newSessionId } = await sessionResponse.json();
   streamId = newStreamId;
   sessionId = newSessionId;
+  didAPI.setStreamId(streamId);
+didAPI.setSessionId(sessionId);
 
   try {
     sessionClientAnswer = await createPeerConnection(offer, iceServers);
@@ -122,7 +103,6 @@ connectButton.onclick = async () => {
 
 const languageSelection = document.querySelector('input[name="language"]:checked').value;
 const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
-const userInputField = document.getElementById('user-input-field');
 
  selectedConfig = {
   ...config.avatar[avatarSelection],
@@ -151,34 +131,6 @@ async function sendQuestionToVoiceflow(question) {
   console.log('Answer: ' + answer);
   return answer;
 }
-async function sendAnswerToDID(answer) {
-  const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${DID_API.key}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      script: {
-        type: 'text',
-        subtitles: 'false',
-        provider: { type: 'microsoft', voice_id: selectedConfig.voice_id },
-        ssml: false,
-        input: answer // Use the answer from Voiceflow
-      },
-      driver_url: 'bank://lively/',
-      config: {
-        fluent: false,
-        pad_audio: 0.2,
-        align_driver: false,
-        auto_match: false,
-        normalization_factor: 1,
-        sharpen:true,
-      },
-      session_id: sessionId
-    })
-  });
-}
 
 userInputField.addEventListener('keydown', async function(event) {
   if (event.key === 'Enter') {
@@ -189,14 +141,14 @@ userInputField.addEventListener('keydown', async function(event) {
       userInputField.value = '';
       // Send question to Voiceflow API
       const answer = await sendQuestionToVoiceflow(question);
-      sendAnswerToDID(answer);
+      didAPI.sendAnswer(answer, selectedConfig);
     }
   }
 });
-
-const micButton = document.getElementById('mic-button');
+const speechRecognition = new SpeechRecognition(selectedConfig);
 micButton.onclick = () => {
   userInputField.disabled = true;
+  speechRecognition.startRecognition();
   const languageSelection = document.querySelector('input[name="language"]:checked').value;
   const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
   selectedConfig = {
@@ -204,37 +156,33 @@ micButton.onclick = () => {
     ...config.language[languageSelection],
     voice_id: config.language[languageSelection].voice_id[avatarSelection]
   };
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
-  recognition.lang = selectedConfig.recognitionLang;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  
   micButton.classList.add('recording');
-  recognition.start();
+ 
 
-  recognition.onresult = async function(event) {
+  speechRecognition.onresult = async function(event) {
     const speechResult = event.results[0][0].transcript;
     console.log('Result: ' + speechResult);
    
     userInputField.value = speechResult;
     // Pass the transcribed text to the Voiceflow API
-    const answer = await sendQuestionToVoiceflow(speechResult);
-    sendAnswerToDID(answer);
+    const answer = await sendQuestionToVoiceflow(question);
+    didAPI.sendAnswer(answer, selectedConfig);
     
   };
 
-  recognition.onspeechend = function() {
-    recognition.stop();
+  speechRecognition.onspeechend = function() {
+    speechRecognition.stopRecognition();
     micButton.classList.remove('recording');
     userInputField.disabled = false;
   };
 
-  recognition.onerror = function(event) {
+  speechRecognition.onerror = function(event) {
     console.log('Error occurred in recognition: ' + event.error);
     micButton.classList.remove('recording');
   };
 };
 
-const destroyButton = document.getElementById('destroy-button');
 destroyButton.onclick = async () => {
   await fetch(`${DID_API.url}/talks/streams/${streamId}`, {
     method: 'DELETE',
@@ -412,22 +360,3 @@ function closePC(pc = peerConnection) {
   }
 }
 
-const maxRetryCount = 3;
-const maxDelaySec = 4;
-
-async function fetchWithRetries(url, options, retries = 1) {
-  try {
-    return await fetch(url, options);
-  } catch (err) {
-    if (retries <= maxRetryCount) {
-      const delay = Math.min(Math.pow(2, retries) / 4 + Math.random(), maxDelaySec) * 1000;
-
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      console.log(`Request failed, retrying ${retries}/${maxRetryCount}. Error ${err}`);
-      return fetchWithRetries(url, options, retries + 1);
-    } else {
-      throw new Error(`Max retries exceeded. error: ${err}`);
-    }
-  }
-}
