@@ -1,5 +1,12 @@
 'use strict';
-import DID_API from './api.json' assert { type: 'json' };
+import { DID_API, config } from './helpers/apiConfig';
+import { talkVideo, /* ... other DOM elements ... */ } from './helpers/domElements';
+import VoiceflowAPI from './helpers/voiceflowAPI';
+import DIDAPI from './helpers/didAPI';
+import SpeechRecognition from './helpers/speechRecognition';
+import UIInteraction from './helpers/uiInteraction';
+import VideoPlayer from './helpers/videoPlayer';
+import RetryHelper from './helpers/retryHelper';
 let selectedConfig;
 if (DID_API.key == '🤫') alert('Please put your api key inside ./api.json and restart..');
 
