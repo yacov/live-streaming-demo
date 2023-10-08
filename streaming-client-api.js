@@ -115,15 +115,81 @@ connectButton.onclick = async () => {
 
 const languageSelection = document.querySelector('input[name="language"]:checked').value;
 const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
+const userInputField = document.getElementById('user-input-field');
 
  selectedConfig = {
   ...config.avatar[avatarSelection],
   ...config.language[languageSelection],
   voice_id: config.language[languageSelection].voice_id[avatarSelection]
 };
+async function sendQuestionToVoiceflow(question) {
+  const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
+    method: 'POST',
+    headers: {
+      'Authorization': `${selectedConfig.authorizationKey}`,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      question: question,
+      settings: {
+        model: 'gpt-3.5-turbo',
+        temperature: 0.1
+      }
+    })
+  });
+
+  const voiceflowData = await voiceflowResponse.json();
+  const answer = voiceflowData.output || selectedConfig.noInformationMessage;
+  console.log('Answer: ' + answer);
+  return answer;
+}
+async function sendAnswerToDID(answer) {
+  const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${DID_API.key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      script: {
+        type: 'text',
+        subtitles: 'false',
+        provider: { type: 'microsoft', voice_id: selectedConfig.voice_id },
+        ssml: false,
+        input: answer // Use the answer from Voiceflow
+      },
+      driver_url: 'bank://lively/',
+      config: {
+        fluent: false,
+        pad_audio: 0.2,
+        align_driver: false,
+        auto_match: false,
+        normalization_factor: 1,
+        sharpen:true,
+      },
+      session_id: sessionId
+    })
+  });
+}
+
+userInputField.addEventListener('keydown', async function(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault(); // Prevent form submission
+
+    const question = userInputField.value.trim();
+    if (question) {
+      userInputField.value = '';
+      // Send question to Voiceflow API
+      const answer = await sendQuestionToVoiceflow(question);
+      sendAnswerToDID(answer);
+    }
+  }
+});
 
 const micButton = document.getElementById('mic-button');
 micButton.onclick = () => {
+  userInputField.disabled = true;
   const languageSelection = document.querySelector('input[name="language"]:checked').value;
   const avatarSelection = document.querySelector('input[name="avatar"]:checked').value;
   selectedConfig = {
@@ -141,59 +207,18 @@ micButton.onclick = () => {
   recognition.onresult = async function(event) {
     const speechResult = event.results[0][0].transcript;
     console.log('Result: ' + speechResult);
-    const userInputField = document.getElementById('user-input-field');
+   
     userInputField.value = speechResult;
     // Pass the transcribed text to the Voiceflow API
-    const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
-      method: 'POST',
-      headers: {
-        'Authorization': `${selectedConfig.authorizationKey}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        question: speechResult,
-        settings: {
-          model: 'gpt-3.5-turbo',
-          temperature: 0.1
-        }
-      })
-    });
-
-    const voiceflowData = await voiceflowResponse.json();
-    const answer = voiceflowData.output || selectedConfig.noInformationMessage;
-
-    const talkResponse = await fetchWithRetries(`${DID_API.url}/talks/streams/${streamId}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${DID_API.key}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        script: {
-          type: 'text',
-          subtitles: 'false',
-          provider: { type: 'microsoft', voice_id: selectedConfig.voice_id },
-          ssml: true,
-          input: answer // Use the user input,
-        },
-        driver_url: 'bank://lively/',
-        config: {
-          fluent: false,
-          pad_audio: 0.2,
-          align_driver: false,
-          auto_match: false,
-          normalization_factor: 1,
-          sharpen:true,
-        },
-        session_id: sessionId
-      })
-    });
+    const answer = await sendQuestionToVoiceflow(speechResult);
+    sendAnswerToDID(answer);
+    
   };
 
   recognition.onspeechend = function() {
     recognition.stop();
     micButton.classList.remove('recording');
+    userInputField.disabled = false;
   };
 
   recognition.onerror = function(event) {
