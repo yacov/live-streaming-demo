@@ -1,5 +1,6 @@
 'use strict';
 import DID_API from './api.json' assert { type: 'json' };
+const spinner = document.getElementById('spinner');
 let selectedConfig;
 if (DID_API.key == '🤫') alert('Please put your api key inside ./api.json and restart..');
 
@@ -20,11 +21,11 @@ let lastBytesReceived;
 const config = {
   avatar: {
     man: {
-      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_tiTmukGsgloXzi30TOyGj/uae_presenterSmall.png',
+      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_3GEAo5oqRZM1iJ9wxZIWi/PresenterManFinal1.png',
       idleVideo: 'M_Idle.mp4'
     },
     woman: {
-      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_WmsMKDEB8NeMRH3DilBnX/PresenterWomanFinal1.png',
+      source_url: 's3://d-id-images-prod/google-oauth2|112587076384125082124/img_-sAMwA3KEaT7RL-WbWr4i/PresenterWomanFinal1.png',
       idleVideo: 'W_idle.mp4'
     }
   },
@@ -123,6 +124,7 @@ const userInputField = document.getElementById('user-input-field');
   voice_id: config.language[languageSelection].voice_id[avatarSelection]
 };
 async function sendQuestionToVoiceflow(question) {
+  document.getElementById('spinner').style.display = 'block';
   const voiceflowResponse = await fetch('https://general-runtime.voiceflow.com/knowledge-base/query', {
     method: 'POST',
     headers: {
@@ -156,17 +158,13 @@ async function sendAnswerToDID(answer) {
         type: 'text',
         subtitles: 'false',
         provider: { type: 'microsoft', voice_id: selectedConfig.voice_id },
-        ssml: false,
+        ssml: true,
         input: answer // Use the answer from Voiceflow
       },
       driver_url: 'bank://lively/',
       config: {
-        fluent: false,
-        pad_audio: 0.2,
-        align_driver: false,
-        auto_match: false,
-        normalization_factor: 1,
-        sharpen:true,
+        sharpen: false,
+        stitch: true
       },
       session_id: sessionId
     })
@@ -293,6 +291,7 @@ function onVideoStatusChange(videoIsPlaying, stream) {
   if (videoIsPlaying) {
     status = 'streaming';
     const remoteStream = stream;
+    document.getElementById('spinner').style.display = 'none';
     setVideoElement(remoteStream);
   } else {
     status = 'empty';

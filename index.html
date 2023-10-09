@@ -84,7 +84,12 @@
       }
 
       /* added css from here */
-
+      body {
+        background-image: url('oig3.png');
+        background-repeat: no-repeat;
+        background-size: 100% auto;;
+        background-position: 25px center;
+      }
       body * {
           font-family: 'Mulish', sans-serif;
           text-align: center;
@@ -99,6 +104,7 @@
           display: flex;
           flex-direction: column;
           height: 100%;
+          align-items: center;
       }
 
       #buttons {
@@ -124,11 +130,11 @@
       }
 
       #logo {
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          width: 50px; /* Adjust as necessary */
-          height: 50px; /* Adjust as necessary */
+        position: absolute;
+        top: 270px; /* Adjusted from 10px to 260px */
+        left: 50px; /* Adjusted from 10px to 50px */
+        width: 50px; /* Adjust as necessary */
+        height: 50px; /* Adjust as necessary */
       }
 
       #status {
@@ -150,35 +156,68 @@
       .status-item {
           margin: 0 10px;
       }
+      .loader {
+  border: 8px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 8px solid #3498db;
+  width: 60px;
+  height: 60px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
       #status div {
           padding-bottom: 10px;
       }
+      #video-container {
+        width: 800px;
+  height: 800px;
+      }
+
+#spinner {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
 
       #video-wrapper {
-          height: 542px; /* Match the video height */
-          width: 800px; /* Match the video width */
-          display: flex;
-          justify-content: center;
-          align-items: center;
+        width: 800px;
+  height: 800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
       }
 
       #video-wrapper div {
-          width: 800px; /* Match the video width */
-          height: 542px; /* Match the video height */
+        width: 800px;
+  height: 800px;
           margin: 0 auto;
           overflow: hidden;
-          border-radius: 20%; /* Optional */
+          border-radius: 5%; /* Optional */
       }
 
       video {
-          max-width: 100%;
-          height: auto;
-          border-radius: 20%;
+        position: relative;
+  left: -63px;
+  top: 297px;
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+          border-radius: 5%;
       }
 
       #user-input-field {
-          width: 80%; /* Adjust this value to make the input field as wide as you want */
+          width: 90%; /* Adjust this value to make the input field as wide as you want */
           font-size: 20px; /* Adjust this value to change the size of the input text */
           margin: 0 auto; /* This centers the input field */
           margin-top: 20px; /* This puts some space between the input field and the horizontal rule */
@@ -196,9 +235,14 @@
 <div id='content'>
   <img alt='Logo' id='logo' src='logo.jpg'>
   <!-- added "id=video-wrapper" -->
-  <div id='video-wrapper'>
-    <div>
-      <video autoplay height='542' id='talk-video' width='800'></video>
+  <div id='video-container'>
+    <div id='video-wrapper'>
+      <div>
+        <video autoplay height='542' id='talk-video' width='800'></video>
+      </div>
+    </div>
+    <div id='spinner' style='display: none;'>
+      <div class='loader'></div>
     </div>
   </div>
   <br />
@@ -227,7 +271,6 @@
     <button id='mic-button' type='button'>Mic</button>
     <button id='destroy-button' type='button'>Stop bot</button>
   </div>
-
   <!-- added div#status -->
   <div id='status' style='display: flex; justify-content: space-between; flex-wrap: wrap;'>
 
@@ -256,5 +299,6 @@
 </div>
 
 <script src='./index.js' type='module'></script>
+<script src='./streaming-client-api.js' type='module'></script>
 </body>
 </html>
